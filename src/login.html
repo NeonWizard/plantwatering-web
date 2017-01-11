@@ -1,0 +1,203 @@
+<!--
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+-->
+
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/iron-icons/social-icons.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+
+<link rel="import" href="app-data.html">
+<link rel="import" href="log-out.html">
+
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="pw-login">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+
+        padding: 10px;
+      }
+
+      #title-h1 {
+        font-size: 1.6em;
+        margin: 20px;
+        margin-bottom: 30px;
+      }
+
+      #center-content {
+        display: flex;
+        height: 100%;
+        justify-content: center;
+        text-align: center;
+      }
+
+      #center-card {
+        margin-top: 85px;
+        padding-left: 85px;
+        padding-right: 85px;
+        padding-bottom: 40px;
+      }
+
+      .alert-error {
+        background: #ffcdd2;
+        border: 1px solid #f44336;
+        border-radius: 3px;
+        color: #333;
+        font-size: 14px;
+        padding: 10px;
+      }
+
+      .login-input {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+      }
+
+      .login-icon {
+        padding: 0px;
+        margin-right: 15px;
+        flex: 0 0 auto;
+      }
+
+      .login-input-container {
+        flex: 0 0 auto;
+        width: 250px;
+        margin-right: 29px;
+        text-align: left;
+      }
+
+      #login-button {
+        box-shadow: 1px 1px 2px;
+        width: 250px;
+        background-color: rgb(245, 245, 245);
+        color: rgb(100, 100, 100);
+      }
+
+      #register-link {
+        margin: 0;
+        margin-top: 13px;
+        margin-left: 32px;
+        text-align: left;
+      }
+    </style>
+
+    <iron-ajax
+      id="loginAjax"
+      method="post"
+      content-type="application/json"
+      handle-as="json"
+      on-response="handleUserResponse"
+      on-error="handleUserError"></iron-ajax>
+
+    <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage>
+    <app-location route="{{route}}" use-hash-as-path></app-location>
+    <app-data key="userData" data="{{storedUser}}"></app-data>
+
+    <div id="center-content">
+      <div id="center-card" class="card">
+        <div id="unauthenticated" hidden$="[[storedUser.loggedin]]">
+          <h1>Log In</h1>
+
+          <template is="dom-if" if="[[error]]">
+            <p class="alert-error"><strong>Error:</strong> [[error]]</p>
+          </template>
+
+          <!-- Username -->
+          <div class="login-input">
+            <iron-icon class="login-icon" icon="social:person"></iron-icon>
+            <paper-input-container class="login-input-container" no-label-float>
+              <label>Username</label>
+              <input is="iron-input" id="username" type="text" on-keypress="checkForSubmit" bind-value="{{formData.username}}">
+            </paper-input-container>
+          </div>
+          <!-- Password -->
+          <div class="login-input">
+            <iron-icon class="login-icon" icon="icons:lock-outline"></iron-icon>
+            <paper-input-container class="login-input-container" no-label-float>
+              <label>Password</label>
+              <input is="iron-input" id="password" type="password" on-keypress="checkForSubmit" bind-value="{{formData.password}}">
+            </paper-input-container>
+          </div>
+
+          <div class="wrapper-btns">
+            <paper-button id="login-button" raised class="primary" on-tap="postLogin">Log in</paper-button>
+          </div>
+
+          <p id="register-link">
+            <a href="/#/register">Register</a>
+          </p>
+        </div>
+
+        <div id="authenticated" hidden$="[[!storedUser.loggedin]]">
+          <h2>Hello, [[storedUser.name]]!</h2>
+          <p>You are currently logged in. You can access <a href="/#/secret-quotes">Secret Quotes</a>!</p>
+          <log-out stored-user="{{storedUser}}"></log-out>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: "pw-login",
+      properties: {
+        formData: {
+          type: Object,
+          value: {}
+        },
+        storedUser: Object,
+        error: String
+      },
+
+      _setReqBody: function() {
+        this.$.loginAjax.body = this.formData;
+      },
+
+      checkForSubmit: function(event) {
+        if (event.keyCode === 13) {
+          this.postLogin();
+        }
+      },
+
+      postLogin: function() {
+        this.$.loginAjax.url = "http://localhost:3003/users/authenticate";
+        this._setReqBody();
+        this.$.loginAjax.generateRequest();
+      },
+
+      handleUserResponse: function(event) {
+        let response = event.detail.response;
+
+        if (response.id_token) {
+          this.error = '';
+          this.storedUser = {
+            name: this.formData.username,
+            token: response.id_token,
+            loggedin: true
+          };
+          this.set('route.path', '/home');
+        }
+        this.formData = {};
+      },
+
+      handleUserError: function(error) {
+        this.error = error.detail.request.xhr.response.error;
+      }
+    });
+  </script>
+</dom-module>
