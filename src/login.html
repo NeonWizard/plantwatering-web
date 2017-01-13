@@ -104,9 +104,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       on-response="handleUserResponse"
       on-error="handleUserError"></iron-ajax>
 
-    <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage>
+    <!-- <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage> -->
     <app-location route="{{route}}" use-hash-as-path></app-location>
-    <app-data key="userData" data="{{storedUser}}"></app-data>
 
     <div id="center-content">
       <div id="center-card" class="card">
@@ -160,7 +159,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: Object,
           value: {}
         },
-        storedUser: Object,
+        storedUser: {
+          type: Object,
+          notify: true
+        },
         error: String
       },
 

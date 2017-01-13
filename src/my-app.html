@@ -113,12 +113,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         data="{{routeData}}"
         tail="{{subroute}}"></app-route>
     <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage>
-    <app-data key="userData" data="{{storedUser}}"></app-data>
 
     <!-- Header -->
     <app-header fixed shadow>
       <app-toolbar id="toolbar">
         <paper-icon-button id="menuToggle" icon="menu" on-tap="_onTap"></paper-icon-button>
+        <!-- <div style="width: 40px"></div>  -->
         <div main-title>Plant Watering</div>
       </app-toolbar>
     </app-header>
@@ -131,12 +131,14 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           Home
         </paper-icon-item>
       </a>
-      <a href="/#/secret-quotes" hidden$="[[!storedUser.loggedin]]" tabindex="-1">
-        <paper-icon-item>
-          <iron-icon icon="maps:add-location" item-icon></iron-icon>
-          Secret Quotes
-        </paper-icon-item>
-      </a>
+      <template is="dom-if" if="[[!notLoggedIn]]">
+        <a href="/#/secret-quotes" tabindex="-1">
+          <paper-icon-item>
+            <iron-icon icon="maps:add-location" item-icon></iron-icon>
+            Secret Quotes
+          </paper-icon-item>
+        </a>
+      </template>
     </app-drawer>
 
     <!-- Main content -->
@@ -148,7 +150,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           role="main">
         <pw-home name="home"></pw-home>
         <pw-register name="register"></pw-register>
-        <pw-login name="login"></pw-login>
+        <pw-login name="login" stored-user="{{storedUser}}"></pw-login>
         <secret-quotes name="secret-quotes"></secret-quotes>
         <pw-not-found name="not-found"></pw-not-found>
       </iron-pages>
@@ -165,18 +167,31 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           reflectToAttribute: true,
           observer: '_pageChanged'
         },
-        storedUser: Object
+        storedUser: {
+          type: Object,
+          value: {}
+        },
+        notLoggedIn: {
+          type: Boolean,
+          value: true,
+          computed: "_computeNotLoggedIn(storedUser.*)"
+        }
       },
 
       observers: [
-        '_routePageChanged(routeData.page)'
+        '_routePageChanged(routeData.page)',
+        '_pathChanged(route.path)'
       ],
 
       _routePageChanged: function(page) {
-        this.page = page || 'home-quotes';
+        this.page = page || 'home';
 
         if (!this.$.drawer.persistent) {
           this.$.drawer.close();
+        }
+
+        if (!(this.storedUser || {}).loggedin && !(this.page == 'login' || this.page == "register")) {
+          this.set("routeData.page", "login");
         }
       },
 
@@ -186,8 +201,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _pageChanged: function(page) {
         // Load page import on demand. Show 404 page if fails
-        var resolvedPageUrl = this.resolveUrl(page + '.html');
+        let resolvedPageUrl = this.resolveUrl(page + '.html');
         this.importHref(resolvedPageUrl, null, this._showPage404, true);
+      },
+
+      _pathChanged: function(path) {
+        if (path == "" || path == "/") {
+          this.set("route.path", "/home");
+          return;
+        }
       },
 
       _showPage404: function() {
@@ -196,6 +218,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       _onTap: function() {
         this.$.drawer.toggle();
+      },
+
+      _computeNotLoggedIn: function() {
+        return !((this.storedUser || {}).loggedin);
       }
     });
   </script>

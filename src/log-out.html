@@ -24,7 +24,8 @@
 		</style>
 
 
-		<app-data key="userData" data="{{storedUser}}"></app-data>
+		<!-- <app-data key="userData" data="{{storedUser}}"></app-data> -->
+		<!-- <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage> -->
 
 		<template is="dom-if" if="{{!link}}">
 			<paper-button raised on-tap="logout">Log Out</paper-button>
@@ -38,17 +39,20 @@
 		(function() {
 			Polymer({
 				is: 'log-out',
-			    properties: {
-			        storedUser: Object,
-			        link: {
-			            type: Boolean,
-			            value: false
-			        }
-			    },
-			    logout: function() {
-			        // remove user data
-			        this.storedUser = null;
-			    }
+				properties: {
+					storedUser: {
+						type: Object,
+						notify: true
+					},
+					link: {
+						type: Boolean,
+						value: false
+					}
+				},
+				logout: function() {
+					// remove user data
+					this.storedUser = {};
+				}
 			});
 		}());
 	</script>
