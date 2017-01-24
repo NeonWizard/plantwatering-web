@@ -66,6 +66,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         display: flex;
         align-items: center;
         justify-content: flex-end;
+
+        margin-bottom: 5px;
       }
 
       .login-icon {
@@ -110,7 +112,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <div id="center-content">
       <div id="center-card" class="card">
         <div id="unauthenticated" hidden$="[[storedUser.loggedin]]">
-          <h1>Log In</h1>
+          <h1 id="title-h1">Log In</h1>
 
           <template is="dom-if" if="[[error]]">
             <p class="alert-error"><strong>Error:</strong> [[error]]</p>
