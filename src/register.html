@@ -43,20 +43,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         margin-bottom: 30px;
       }
 
-      #center-content {
-        display: flex;
-        height: 100%;
-        justify-content: center;
-        text-align: center;
-      }
-
-      #center-card {
-        margin-top: 85px;
-        padding-left: 85px;
-        padding-right: 85px;
-        padding-bottom: 40px;
-      }
-
       .alert-error {
         background: #ffcdd2;
         border: 1px solid #f44336;
@@ -106,8 +92,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
     <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage>
     <app-location route="{{route}}" use-hash-as-path></app-location>
 
-    <div id="center-content">
-      <div id="center-card" class="card">
+    <div class="center-content">
+      <div class="center-card">
         <div id="unauthenticated" hidden$="[[storedUser.loggedin]]">
           <h1 id="title-h1">Create an account</h1>
 
