@@ -179,8 +179,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           this.storedUser = {
             name: this.formData.username,
             token: response.id_token,
+            UID: response.UID,
             loggedin: true
           };
+          console.log(this.storedUser);
           this.set('route.path', '/home');
         }
         this.formData = {};

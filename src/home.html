@@ -12,6 +12,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 <link rel="import" href="shared-styles.html">
 <link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
 <link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/paper-datatable/paper-datatable.html">
 
 <dom-module id="pw-home">
   <template>
@@ -21,25 +22,56 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         padding: 10px;
       }
+
+      #table-container {
+        margin: 24px;
+        margin-top: 50px;
+
+        color: #757575;
+        border-radius: 5px;
+        background-color: #fff;
+        box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
+
+        text-align: left;
+      }
+
+      paper-datatable {
+        padding: 8px;
+      }
+
+      #table-header-text {
+        color: #000;
+        font-size: 20px;
+        font-weight: normal;
+
+        padding: 16px;
+        padding-bottom: 5px;
+        margin-left: 10px;
+      }
     </style>
 
+    <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage>
+
     <iron-ajax
-      id="getQuoteAjax"
-      auto
-      url="http://localhost:3003/api/quote"
+      id="getAjax"
       method="get"
-      handle-as="text"
-      last-response="{{quote}}"></iron-ajax>
+      handle-as="json"
+      on-response="handleRequest"
+      on-error="handleRequestError"></iron-ajax>
 
+    <paper-button raised on-tap="getPlants" class="primary">Get plants</paper-button>
     <div class="center-content">
-      <div class="center-card">
-        <h1>Quotes</h1>
-        <blockquote>[[quote]]</blockquote>
-        <paper-button raised on-tap="getQuote" class="primary">Get a new quote</paper-button>
+      <div id="table-container">
+        <div id="table-header">
+          <div id="table-header-text">My Plants</div>
+        </div>
+        <paper-datatable data="{{plants}}" selectable multi-selection>
+          <paper-datatable-column header="Name" property="name" sortable>
+          </paper-datatable-column>
+          <paper-datatable-column header="Species" property="species" align="right" sortable>
+          </paper-datatable-column>
+        </paper-datatable>
       </div>
-    </div>
-
-    <div id="list">
     </div>
   </template>
 
@@ -48,12 +80,39 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       is: "pw-home",
 
       properties: {
-        quote: String
+        plants: {
+          type: Array,
+          value: []
+        },
+        storedUser: {
+          type: Object,
+          notify: true,
+          observer: "storedUserSet"
+        }
       },
 
-      getQuote: function() {
-        // get a quote from the API
-        this.$.getQuoteAjax.generateRequest();
+      getPlants: function() {
+        // Put JWT on authorization header
+        this.$.getAjax.headers["AUTHORIZATION"] = `Bearer ${this.storedUser.token}`;
+
+        this.$.getAjax.url = `http://localhost:3003/users/${this.storedUser.UID}/plants`;
+        this.$.getAjax.generateRequest();
+      },
+
+      handleRequest: function(event) {
+        let response = event.detail.response;
+
+        this.plants = response.plants;
+      },
+
+      handleRequestError: function(error) {
+        console.log(error.detail.request.xhr.response.error);
+      },
+
+      storedUserSet: function(value) {
+        if (value) {
+          this.getPlants();
+        }
       }
     });
   </script>
