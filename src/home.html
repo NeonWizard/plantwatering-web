@@ -33,20 +33,25 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14), 0 1px 5px 0 rgba(0, 0, 0, 0.12), 0 3px 1px -2px rgba(0, 0, 0, 0.2);
 
         text-align: left;
+
+        padding: 8px;
+        padding-top: 15px;
       }
 
       paper-datatable {
-        padding: 8px;
+        /*padding: 8px;*/
       }
 
       #table-header-text {
-        color: #000;
-        font-size: 20px;
+        color: rgb(25, 25, 25);
+        font-size: 23px;
         font-weight: normal;
 
         padding: 16px;
-        padding-bottom: 5px;
+        padding-bottom: 15px;
         margin-left: 10px;
+      
+        border-bottom: 1px solid gray;
       }
     </style>
 
@@ -59,7 +64,6 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       on-response="handleRequest"
       on-error="handleRequestError"></iron-ajax>
 
-    <paper-button raised on-tap="getPlants" class="primary">Get plants</paper-button>
     <div class="center-content">
       <div id="table-container">
         <div id="table-header">
@@ -69,6 +73,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           <paper-datatable-column header="Name" property="name" sortable>
           </paper-datatable-column>
           <paper-datatable-column header="Species" property="species" align="right" sortable>
+          </paper-datatable-column>
+          <paper-datatable-column header="Time left" property="timeLeft" align="right" sortable sorted>
           </paper-datatable-column>
         </paper-datatable>
       </div>
@@ -91,6 +97,20 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       },
 
+      setTimeLeft: function(plant) {
+        let timeElapsed = Date.now() - Date.parse(plant.lastWatered);
+        let milLeft = (plant.waterInterval * 3600000) - timeElapsed;
+        let timeLeft = (milLeft / 3600000);
+
+        if (timeLeft < 0) {
+          let exclamations = Math.min(Math.floor(Math.abs(timeLeft) / 24) + 1, 3);
+          let decorator = `<span style="font-size: 125%; color: red; font-weight: bold;">${"!".repeat(exclamations)}</span>`;
+          plant.timeLeft = `${decorator} <span style="font-weight: bold">Needs watering</span> ${decorator}`;
+        } else {
+          plant.timeLeft = `${timeLeft.toFixed(2)} hours`;
+        }
+      },
+
       getPlants: function() {
         // Put JWT on authorization header
         this.$.getAjax.headers["AUTHORIZATION"] = `Bearer ${this.storedUser.token}`;
@@ -103,6 +123,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         let response = event.detail.response;
 
         this.plants = response.plants;
+
+        for (let i = 0; i < this.plants.length; i++) {
+          this.setTimeLeft(this.plants[i]);
+        }
       },
 
       handleRequestError: function(error) {
