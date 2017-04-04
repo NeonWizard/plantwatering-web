@@ -23,9 +23,19 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         padding: 10px;
       }
 
+      #table-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 40px;
+      }
+
+      #table-buttons paper-button + paper-button {
+        margin-left: 30px;
+      }
+
       #table-container {
         margin: 24px;
-        margin-top: 50px;
+        margin-top: 15px;
 
         color: #757575;
         border-radius: 5px;
@@ -34,12 +44,8 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
         text-align: left;
 
-        padding: 8px;
+        padding: 12px 25px 17px 25px;
         padding-top: 15px;
-      }
-
-      paper-datatable {
-        /*padding: 8px;*/
       }
 
       #table-header-text {
@@ -53,23 +59,45 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       
         border-bottom: 1px solid gray;
       }
+
+      paper-button {
+        box-shadow: 1px 1px 2px;
+        padding: 10px 25px;
+        background-color: white;
+        color: rgb(50, 50, 50);
+      }
+
+      #delete-plants {
+        background-color: rgb(255, 180, 180);
+      }
+
+      .center-content { display: flex; flex-direction: column; align-items: center; }
     </style>
 
     <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage>
 
     <iron-ajax
-      id="getAjax"
-      method="get"
+      id="retrieveAjax"
+      method="GET"
       handle-as="json"
-      on-response="handleRequest"
+      on-response="handleGetRequest"
+      on-error="handleRequestError"></iron-ajax>
+    <iron-ajax
+      id="updateAjax"
+      handle-as="json"
+      on-response="getPlants"
       on-error="handleRequestError"></iron-ajax>
 
     <div class="center-content">
+      <div id="table-buttons">
+        <paper-button on-click="setWatered">Set watered</paper-button>
+        <paper-button id="delete-plants" on-click="deletePlants">Delete</paper-button>
+      </div>
       <div id="table-container">
         <div id="table-header">
           <div id="table-header-text">My Plants</div>
         </div>
-        <paper-datatable data="{{plants}}" selectable multi-selection>
+        <paper-datatable id="datatable" data="{{plants}}" selected-items="{{selectedPlants}}" selectable multi-selection>
           <paper-datatable-column header="Name" property="name" sortable>
           </paper-datatable-column>
           <paper-datatable-column header="Species" property="species" align="right" sortable>
@@ -90,6 +118,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
           type: Array,
           value: []
         },
+        selectedPlants: {
+          type: Array,
+          value: []
+        },
         storedUser: {
           type: Object,
           notify: true,
@@ -97,8 +129,32 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         }
       },
 
+      setWatered: function() {
+        for (let i = 0; i < this.selectedPlants.length; i++) {
+          // Just be lazy and update everything after making an update to the server
+          this.$.updateAjax.headers["TIMESTAMP"] = `${Date.now()}`;
+          this.$.updateAjax.headers["AUTHORIZATION"] = "Bearer " + this.storedUser.token;
+          this.$.updateAjax.method = "PUT";
+          this.$.updateAjax.onResponse = "successfulWateredUpdate";
+
+          this.$.updateAjax.url = `http://localhost:3003/users/${this.storedUser.UID}/plants/${this.selectedPlants[i].PID}/water`;
+          this.$.updateAjax.generateRequest();
+        }
+      },
+
+      deletePlants: function() {
+        for (let i = 0; i < this.selectedPlants.length; i++) {
+          this.$.updateAjax.headers["AUTHORIZATION"] = "Bearer " + this.storedUser.token;
+          this.$.updateAjax.method = "DELETE";
+          this.$.updateAjax.onResponse = "successfulDeletion";
+
+          this.$.updateAjax.url = `http://localhost:3003/users/${this.storedUser.UID}/plants/${this.selectedPlants[i].PID}`;
+          this.$.updateAjax.generateRequest();
+        }
+      },
+
       setTimeLeft: function(plant) {
-        let timeElapsed = Date.now() - Date.parse(plant.lastWatered);
+        let timeElapsed = Date.now() - plant.lastWatered;
         let milLeft = (plant.waterInterval * 3600000) - timeElapsed;
         let timeLeft = (milLeft / 3600000);
 
@@ -113,13 +169,16 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
 
       getPlants: function() {
         // Put JWT on authorization header
-        this.$.getAjax.headers["AUTHORIZATION"] = `Bearer ${this.storedUser.token}`;
+        this.$.retrieveAjax.headers["AUTHORIZATION"] = `Bearer ${this.storedUser.token}`;
+        this.$.retrieveAjax.onResponse = "handleGetRequest";
 
-        this.$.getAjax.url = `http://localhost:3003/users/${this.storedUser.UID}/plants`;
-        this.$.getAjax.generateRequest();
+        this.$.retrieveAjax.url = `http://localhost:3003/users/${this.storedUser.UID}/plants`;
+        this.$.retrieveAjax.generateRequest();
+
+        this.$.datatable.deselectAll();
       },
 
-      handleRequest: function(event) {
+      handleGetRequest: function(event) {
         let response = event.detail.response;
 
         this.plants = response.plants;
@@ -130,7 +189,15 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
       },
 
       handleRequestError: function(error) {
-        console.log(error.detail.request.xhr.response.error);
+        console.log(error.detail.request.xhr);
+      },
+
+      successfulWateredUpdate: function(event) {
+        this.getPlants();
+      },
+
+      successfulDeletion: function(event) {
+        this.getPlants();
       },
 
       storedUserSet: function(value) {
