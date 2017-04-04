@@ -137,10 +137,10 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         </paper-icon-item>
       </a>
       <template is="dom-if" if="[[!notLoggedIn]]">
-        <a href="/#/secret-quotes" tabindex="-1">
+        <a href="/#/add-plant" tabindex="-1">
           <paper-icon-item>
             <iron-icon icon="maps:add-location" item-icon></iron-icon>
-            Secret Quotes
+            Add Plant
           </paper-icon-item>
         </a>
       </template>
@@ -156,7 +156,7 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         <pw-home name="home"></pw-home>
         <pw-register name="register"></pw-register>
         <pw-login name="login" stored-user="{{storedUser}}"></pw-login>
-        <secret-quotes name="secret-quotes"></secret-quotes>
+        <pw-add-plant name="add-plant"></pw-add-plant>
         <pw-not-found name="not-found"></pw-not-found>
       </iron-pages>
     </main>

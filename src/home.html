@@ -204,6 +204,12 @@ subject to an additional IP rights grant found at http://polymer.github.io/PATEN
         if (value) {
           this.getPlants();
         }
+      },
+
+      ready: function() {
+        if (this.storedUser) {
+          this.getPlants();
+        }
       }
     });
   </script>

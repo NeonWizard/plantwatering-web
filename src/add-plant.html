@@ -1,0 +1,161 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/iron-ajax/iron-ajax.html">
+<link rel="import" href="../bower_components/iron-localstorage/iron-localstorage.html">
+<link rel="import" href="../bower_components/iron-input/iron-input.html">
+<link rel="import" href="../bower_components/paper-input/paper-input.html">
+<link rel="import" href="../bower_components/paper-button/paper-button.html">
+<link rel="import" href="../bower_components/app-route/app-location.html">
+<link rel="import" href="../bower_components/iron-icons/image-icons.html">
+<link rel="import" href="../bower_components/iron-icons/iron-icons.html">
+<link rel="import" href="../bower_components/iron-icon/iron-icon.html">
+
+<link rel="import" href="app-data.html">
+<link rel="import" href="log-out.html">
+
+<link rel="import" href="shared-styles.html">
+
+<dom-module id="pw-add-plant">
+  <template>
+    <style include="shared-styles">
+      :host {
+        display: block;
+
+        padding: 10px;
+      }
+
+      #title-h1 {
+        font-size: 1.6em;
+        margin: 20px;
+        margin-bottom: 30px;
+      }
+
+      .alert-error {
+        background: #ffcdd2;
+        border: 1px solid #f44336;
+        border-radius: 3px;
+        color: #333;
+        font-size: 14px;
+        padding: 10px;
+      }
+
+      .add-input {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+
+        margin-bottom: 5px;
+      }
+
+      .add-icon {
+        padding: 0px;
+        margin-right: 15px;
+        flex: 0 0 auto;
+      }
+
+      .add-input-container {
+        flex: 0 0 auto;
+        width: 250px;
+        margin-right: 29px;
+        text-align: left;
+      }
+
+      #add-button {
+        box-shadow: 1px 1px 2px;
+        width: 250px;
+        background-color: rgb(245, 245, 245);
+        color: rgb(100, 100, 100);
+      }
+    </style>
+
+    <iron-ajax
+      id="postAjax"
+      method="post"
+      content-type="application/json"
+      handle-as="json"
+      on-response="postSuccess"
+      on-error="postError"></iron-ajax>
+
+    <iron-localstorage name="user-storage" value="{{storedUser}}"></iron-localstorage>
+    <app-location route="{{route}}" use-hash-as-path></app-location>
+
+    <div class="center-content">
+      <div class="center-card">
+        <h1 id="title-h1">Add Plant</h1>
+
+        <template is="dom-if" if="[[error]]">
+          <p class="alert-error"><strong>Error:</strong> [[error]]</p>
+        </template>
+
+        <div class="add-input">
+          <iron-icon class="add-icon" icon="icons:assignment"></iron-icon>
+          <paper-input-container class="add-input-container" no-label-float>
+            <label>Name</label>
+            <input is="iron-input" id="name" type="text" on-keypress="checkForSubmit" bind-value="{{formData.name}}">
+          </paper-input-container>
+        </div>
+        <div class="add-input">
+          <iron-icon class="add-icon" icon="icons:fingerprint"></iron-icon>
+          <paper-input-container class="add-input-container" no-label-float>
+            <label>Species</label>
+            <input is="iron-input" id="species" type="text" on-keypress="checkForSubmit" bind-value="{{formData.species}}">
+          </paper-input-container>
+        </div>
+        <div class="add-input">
+          <iron-icon class="add-icon" icon="image:timer"></iron-icon>
+          <paper-input-container class="add-input-container" no-label-float>
+            <label>Water Interval</label>
+            <input is="iron-input" id="waterInterval" type="text" on-keypress="checkForSubmit" bind-value="{{formData.waterInterval}}">
+          </paper-input-container>
+        </div>
+
+        <div class="wrapper-btns">
+          <paper-button id="add-button" raised class="primary" on-tap="postPlant">Submit</paper-button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script>
+    Polymer({
+      is: "pw-add-plant",
+      properties: {
+        formData: {
+          type: Object,
+          value: {}
+        },
+        storedUser: {
+          type: Object,
+          notify: true
+        },
+        error: String
+      },
+
+      _setReqBody: function() {
+        this.$.postAjax.body = this.formData;
+      },
+
+      checkForSubmit: function(event) {
+        if (event.keyCode === 13) {
+          this.postPlant();
+        }
+      },
+
+      postPlant: function() {
+        this.$.postAjax.headers["AUTHORIZATION"] = `Bearer ${this.storedUser.token}`;
+
+        this.$.postAjax.url = `http://localhost:3003/users/${this.storedUser.UID}/plants`;
+        this._setReqBody();
+        this.$.postAjax.generateRequest();
+      },
+
+      postSuccess: function() {
+        this.formData = {};
+        this.set("route.path", "/home");
+      },
+
+      postError: function(error) {
+        this.error = error.detail.request.xhr.response.error;
+      }
+    });
+  </script>
+</dom-module>
